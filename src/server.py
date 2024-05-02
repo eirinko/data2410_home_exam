@@ -4,6 +4,6 @@ def serverFunction(ip, port):
     serverSocket.bind((ip, port))
     print ('The server is ready to receive')
     while True:
-        message, clientAddress = serverSocket.recvfrom(2048)
+        message, clientAddress = serverSocket.recvfrom(1000)
         modifiedMessage = message.decode().upper()
         serverSocket.sendto(modifiedMessage.encode(),clientAddress)
