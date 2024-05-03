@@ -1,133 +1,95 @@
 from struct import *
 #Using a modified version of the code by Safiqul on his Github:
 # https://github.com/safiqul/2410/blob/main/header/header.py
+#Restructured so the header functions are a part of a class Header.
 
-#H is a 2 byte integer, and this header should be a total of 6 bytes.
-header_format = '!HHH'
-
-#print (f'size of the header = {calcsize(header_format)}') #6 byte header
-
-def create_packet(seq, ack, flags, data):
-    #creates a packet with header information and application data
-    #the input arguments are sequence number, acknowledgment number
-    #flags (we only use 4 bits),  receiver window and application data 
-    #struct.pack returns a bytes object containing the header values
-    #packed according to the header_format !HHH
-    header = pack(header_format, seq, ack, flags)
-
-    #once we create a header, we add the application data to create a packet
-    #of 1000 bytes
-    packet = header + data
-    print(f'packet containing header + data of size {len(packet)}') #just to show the length of the packet
-    return packet
-
-def parse_header(header):
-    #taks a header of 12 bytes as an argument,
-    #unpacks the value based on the specified header_format
-    #and return a tuple with the values
-    header_from_msg = unpack(header_format, header)
-    #parse_flags(flags)
-    return header_from_msg
+class Header:
+    def __init__(self,seq,ack,flags, header_format):
+        #The header gets created when you create a Header instance
+        self.header = pack(header_format, seq, ack, flags)
+        self.seq = seq
+        self.ack = ack
+        self.flags = flags
+        self.header_format = header_format
+        #self.packetsize = 1000
+        #Maybe have packetsize outside of the header instead...
     
+    def get_seq(self):
+        return self.seq
+    
+    def set_seq(self, new_seq):
+        self.seq = new_seq
+    
+    def get_ack(self):
+        return self.ack
+    
+    def set_ack(self, new_ack):
+        self.ack = new_ack
+    
+    def get_flags(self):
+        return self.flags
+    
+    def set_flags(self, new_flags):
+        self.flags = new_flags
+        
+    def get_header(self):
+        return self.header
+    
+    def set_flags(self, new_header):
+        self.header = new_header
+    
+    @staticmethod
+    def parse_header(given_header_format, given_header):
+        #takes a header of as an argument,
+        #unpacks the value based on the specified header_format
+        #and returns a tuple with the values
+        return unpack(given_header_format, given_header)
+    
+    @staticmethod
+    def parse_flags(flags):
+        #we only parse the first 3 fields because we're not 
+        #using rst in our implementation
+        syn = flags & (1 << 3)
+        ack = flags & (1 << 2)
+        fin = flags & (1 << 1)
+        return syn, ack, fin
 
-def parse_flags(flags):
-    #we only parse the first 3 fields because we're not 
-    #using rst in our implementation
-    syn = flags & (1 << 3)
-    ack = flags & (1 << 2)
-    fin = flags & (1 << 1)
-    return syn, ack, fin
+    @staticmethod
+    def create_packet(header, data):
+        #Adds the header and the data together and returns it.
+        #packet = 
+        return header + data
+    
+    @staticmethod
+    def unpack_packet(packet):
+        #Accepts a packet and
+        #returns a tuple with the header and data
+        header = packet[:calcsize(header_format)]
+        data = packet[calcsize(header_format):]
+        return header, data
 
-#Creating a four-way handshake.
-print("Establishing connection:")
-
+header_format = '!HHH'
 sequence_number = 1
 acknowledgment_number = 0
 flags = 8
-# let's look at the last 4 bits:  S A F R (SYN ACK FIN RST)
-# 1 0 0 0  syn flag set, and the decimal equivalent is 8
-#window = 0
 
-# Define data as an empty binary. 
+headerObject = Header(sequence_number,acknowledgment_number,flags,header_format)
+
 data = b''
 
-#msg now holds a packet, including our custom header and data
-msg = create_packet(sequence_number, acknowledgment_number, flags, data)
+packet = headerObject.create_packet(headerObject.get_header(),data)
 
-#The first 6 bytes are the header:
-header = msg[:6]
-seq, ack, flag = parse_header(header)
+#Unpacking the packet
+header, message = Header.unpack_packet(packet)
+
+#Unpacking the header
+seq, ack, flags = Header.parse_header(header_format, header)
 print(f'Seq no: {seq}')
 print(f'Ack no: {ack}')
-synflag, ackflag, finflag = parse_flags(flag)
+
+#Unpacking the flags
+synflag, ackflag, finflag = Header.parse_flags(flags)
 print(f'Syn flag: {synflag}')
 print(f'Ack flag: {ackflag}')
 print(f'Fin flag: {finflag}')
-
-
-#The rest is the message:
-message = msg[6:]
 print(message) #Should be empty.
-
-
-'''
-#now let's create a packet with sequence number 1
-print ('\n\ncreating a packet')
-
-data = b'0' * 1460
-print (f'app data for size ={len(data)}')
-
-sequence_number = 1
-acknowledgment_number = 0
-window = 0 # window value should always be sent from the receiver-side
-flags = 0 # we are not going to set any flags when we send a data packet
-
-#msg now holds a packet, including our custom header and data
-msg = create_packet(sequence_number, acknowledgment_number, flags, window, data)
-
-#now let's look at the header
-#we already know that the header is in the first 12 bytes
-
-header_from_msg = msg[:12]
-print(len(header_from_msg))
-
-#now we get the header from the parse_header function
-#which unpacks the values based on the header_format that 
-#we specified
-seq, ack, flags, win = parse_header (header_from_msg)
-print(f'seq={seq}, ack={ack}, flags={flags}, recevier-window={win}')
-
-#let's extract the data_from_msg that holds
-#the application data of 1460 bytes
-data_from_msg = msg[12:]
-print (len(data_from_msg))
-
-
-#let's mimic an acknowledgment packet from the receiver-end
-#now let's create a packet with acknowledgement number 1
-#an acknowledgment packet from the receiver should have no data
-#only the header with acknowledgment number, ack_flag=1, win=6400
-data = b'' 
-print('\n\nCreating an acknowledgment packet:')
-print (f'this is an empty packet with no data ={len(data)}')
-
-sequence_number = 0
-acknowledgment_number = 1   #an ack for the last sequnce
-window = 0 # window value should always be sent from the receiver-side
-
-# let's look at the last 4 bits:  S A F R
-# 0 0 0 0 represents no flags
-# 0 1 0 0  ack flag set, and the decimal equivalent is 4
-flags = 4 
-
-msg = create_packet(sequence_number, acknowledgment_number, flags, window, data)
-print (f'this is an acknowledgment packet of header size={len(msg)}')
-
-#let's parse the header
-seq, ack, flags, win = parse_header (msg) #it's an ack message with only the header
-print(f'seq={seq}, ack={ack}, flags={flags}, receiver-window={win}')
-
-#now let's parse the flag field
-syn, ack, fin = parse_flags(flags)
-print (f'syn_flag = {syn}, fin_flag={fin}, and ack_flag={ack}')
-'''

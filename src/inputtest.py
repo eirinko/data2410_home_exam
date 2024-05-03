@@ -11,5 +11,4 @@ def port_ok(port):
     return port in range(1024,65536)
 
 
-
 #Create tests?

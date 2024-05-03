@@ -1,3 +1,3 @@
 def test(inputfile):
-    f.open(inputfile,"rb")
+    f=open(inputfile,"rb")
     
