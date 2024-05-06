@@ -5,12 +5,7 @@ header_format = '!HHH'
 sequence_number = 0
 acknowledgment_number = 0
 
-
-
-def clientFunction(ip, port):
-    clientSocket = socket(AF_INET, SOCK_DGRAM)
-    print("Connection Establishment Phase:")
-    
+def successful_handshake(clientSocket, ip, port):
     #Sending SYN flag.
     flags = 8 #Change this to something that makes more sense? Instead of 8, have syn_flag_active()
     synheader = Header(sequence_number,acknowledgment_number,flags,header_format)
@@ -25,7 +20,7 @@ def clientFunction(ip, port):
     
     header, data = Header.unpack_packet(synackpacket,header_format)
     seq, ack, flags = Header.parse_header(header_format, header)
-    print(flags)
+    
     if (Header.syn_flag(flags) and Header.ack_flag(flags)):
         print("SYN-ACK packet is received")
         
@@ -36,16 +31,22 @@ def clientFunction(ip, port):
         packet = ackheader.create_packet(ackheader.get_header(),data)
         clientSocket.sendto(packet, (ip, port))
         print("ACK packet is sent")
-        
-        #Send file
-        
-        
+        return True
     else:
         print("No SYN-ACK packet received.")
-    #message = input('Input lowercase sentence:')
-    #   opened_file = file.open("rb")
+        return False
     
-    #clientSocket.sendto(message.encode(), (ip, port))
-    #modifiedMessage, serverAddress = clientSocket.recvfrom(1000)
-    #print (modifiedMessage.decode())
+def clientFunction(ip, port, file):
+    clientSocket = socket(AF_INET, SOCK_DGRAM)
+    print("Connection Establishment Phase:")
+    
+    if successful_handshake(clientSocket, ip, port):
+        opened_file = open(file,"rb")
+        data = opened_file.read(994)
+        while data:
+            #Send data. 
+            clientSocket.sendto(data,(ip,port))
+        file.close()
+    else:
+        print("The handshake was unsuccessful.")
     clientSocket.close()

@@ -36,35 +36,20 @@ parser.add_argument('-d', '--discard', type=int, default=0)
 
 args = parser.parse_args()
 
-#def main():
-#    
-
 if not port_ok(args.port):
     print("Invalid port. It must be within the range [1024,65535]")
 elif not ip_ok(args.ip):
     print("Invalid IP. It must in this format: 10.1.2.3")
 else:
-    #Testing if both server and client have been chosen:
     if args.server and args.client:
         print("You cannot use both at the same time.")
     elif args.server:
-        #Run the server:
         server.serverFunction(args.ip,args.port)
         print(f"The server is running with IP address = {args.ip} and port address = {args.port}.")
-        #Creating a file where we add data from packets.
-        #Receiving packets and removing header. 
-        
-        
     elif args.client and args.file:
-        #Run the client:
-        client.clientFunction(args.ip, args.port)
-        #client.handshake()
-        print(f"The client is running with IP address = {args.ip} and port address = {args.port}. Transferring file: {args.file}.")
         try:
-            #Open file and read 994 bytes at a time. 
-            #Send 994 bytes to the server. 
-            
-            #
+            client.clientFunction(args.ip, args.port, args.file)
+            print(f"The client is running with IP address = {args.ip} and port address = {args.port}. Transferring file: {args.file}.")
             print("Sending file packets.")
         except:
             print("Cannot find the file.")
@@ -72,41 +57,6 @@ else:
         print("You must provide filename of the file you want to send.")
     else:
         print("You should run either in server or client mode.")
-
-# Need to add tests for the new arguments.
-
-'''
-header_format = '!HHH'
-sequence_number = 1
-acknowledgment_number = 0
-flags = 8
-
-headerObject = Header(sequence_number,acknowledgment_number,flags,header_format)
-
-data = b''
-
-packet = headerObject.create_packet(headerObject.get_header(),data)
-
-#Unpacking the packet
-header, message = Header.unpack_packet(packet,header_format)
-
-#Unpacking the header
-seq, ack, flags = Header.parse_header(header_format, header)
-print(f'Seq no: {seq}')
-print(f'Ack no: {ack}')
-
-#Unpacking the flags
-synflag, ackflag, finflag = Header.parse_flags(flags)
-print(f'Syn flag: {synflag}')
-print(f'Ack flag: {ackflag}')
-print(f'Fin flag: {finflag}')
-print(message) #Should be empty.
-
-print(Header.syn_flag_set(flags))
-print(Header.ack_flag_set(flags))
-print(Header.fin_flag_set(flags))
-'''
-
 
 if __name__ == "__main__":
     import doctest

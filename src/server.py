@@ -6,7 +6,7 @@ header_format = '!HHH'
 sequence_number = 0
 acknowledgment_number = 0
 
-def successful_handshake(header_format,header, serverSocket):
+def successful_handshake(serverSocket):
     #Three-way handshake
     #Starting with checking the flags of the received packet
     packet, clientAddress = serverSocket.recvfrom(1000)
@@ -45,17 +45,18 @@ def serverFunction(ip, port):
     serverSocket.bind((ip, port))
     print ('The server is ready to receive')
     
-    file =b''
+    file = open("result.jpg","wb")
     
-    if successful_handshake(header_format,header, serverSocket):
+    if successful_handshake(serverSocket):
         while True:
             packet, clientAddress = serverSocket.recvfrom(1000)
             header, data = Header.unpack_packet(packet,header_format)
             seq, ack, flags = Header.parse_header(header_format, header)
+            
             if Header.fin_flag(flags):
                 break
             
-            file +=data
+            file.write(data)
             print(f"{datetime.datetime.now()} packet {seq} is received")
             
             #Create ACK packet.
@@ -63,7 +64,6 @@ def serverFunction(ip, port):
             header = Header(seq,seq,flag,header_format)
             data = b''
             packet = header.create_packet(header.get_header(),data)
-
             #Send ACK packet.
             serverSocket.sendto(packet,clientAddress)
             print(f"{datetime.datetime.now()} sending ack for the received {seq}")
