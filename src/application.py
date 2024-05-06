@@ -3,7 +3,8 @@ import argparse
 from socket import *
 import client
 import server
-import inputtest
+from inputtest import *
+from header import *
 
 #Definition of unit tests:
 '''
@@ -18,7 +19,6 @@ import inputtest
     0.9
     """
 '''
-
 
 #Used the code from args.py in oblig 1, with modifications:
 parser = argparse.ArgumentParser(description='simple args')
@@ -36,34 +36,79 @@ parser.add_argument('-d', '--discard', type=int, default=0)
 
 args = parser.parse_args()
 
-#Setting up to test if the IP address is in the correct format
-#test_ip = args.ip.split(".")
-#notinrange = False
-#for number in test_ip:
-#    if int(number) not in range (0,256): # Assuming we want inclusive 0 and inclusive 255. 
-#        notinrange = True
+#def main():
+#    
 
-if not inputtest.port_ok(args.port):
+if not port_ok(args.port):
     print("Invalid port. It must be within the range [1024,65535]")
-elif not inputtest.ip_ok(args.ip):
+elif not ip_ok(args.ip):
     print("Invalid IP. It must in this format: 10.1.2.3")
 else:
     #Testing if both server and client have been chosen:
     if args.server and args.client:
-        print("You cannot use both at the same time")
+        print("You cannot use both at the same time.")
     elif args.server:
         #Run the server:
         server.serverFunction(args.ip,args.port)
-        print(f"The server is running with IP address = {args.ip} and port address = {args.port}")
-    elif args.client:
+        print(f"The server is running with IP address = {args.ip} and port address = {args.port}.")
+        #Creating a file where we add data from packets.
+        #Receiving packets and removing header. 
+        
+        
+    elif args.client and args.file:
         #Run the client:
-        client.clientFunction(args.ip, args.port, args.file)
+        client.clientFunction(args.ip, args.port)
+        #client.handshake()
         print(f"The client is running with IP address = {args.ip} and port address = {args.port}. Transferring file: {args.file}.")
+        try:
+            #Open file and read 994 bytes at a time. 
+            #Send 994 bytes to the server. 
+            
+            #
+            print("Sending file packets.")
+        except:
+            print("Cannot find the file.")
+    elif args.client:
+        print("You must provide filename of the file you want to send.")
     else:
-        print("You should run either in server or client mode")
+        print("You should run either in server or client mode.")
 
-# Need to add tests for the new arguments. 
+# Need to add tests for the new arguments.
+
+'''
+header_format = '!HHH'
+sequence_number = 1
+acknowledgment_number = 0
+flags = 8
+
+headerObject = Header(sequence_number,acknowledgment_number,flags,header_format)
+
+data = b''
+
+packet = headerObject.create_packet(headerObject.get_header(),data)
+
+#Unpacking the packet
+header, message = Header.unpack_packet(packet,header_format)
+
+#Unpacking the header
+seq, ack, flags = Header.parse_header(header_format, header)
+print(f'Seq no: {seq}')
+print(f'Ack no: {ack}')
+
+#Unpacking the flags
+synflag, ackflag, finflag = Header.parse_flags(flags)
+print(f'Syn flag: {synflag}')
+print(f'Ack flag: {ackflag}')
+print(f'Fin flag: {finflag}')
+print(message) #Should be empty.
+
+print(Header.syn_flag_set(flags))
+print(Header.ack_flag_set(flags))
+print(Header.fin_flag_set(flags))
+'''
+
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    #doctest.testmod()
+    #main()
