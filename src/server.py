@@ -3,8 +3,12 @@ from header import *
 import datetime
 
 header_format = '!HHH'
-sequence_number = 0
-acknowledgment_number = 0
+
+finflag = 2
+ackflag = 4
+finackflag = 6
+synflag = 8
+synackflag = 12
 
 def successful_handshake(serverSocket):
     #Three-way handshake
@@ -14,7 +18,8 @@ def successful_handshake(serverSocket):
     seq, ack, flags = Header.parse_header(header_format, header)
     if (Header.syn_flag(flags)):
         print("SYN packet is received")
-        synackflag = 12
+        sequence_number = 0
+        acknowledgment_number = 0
         headerObject = Header(sequence_number,acknowledgment_number,synackflag,header_format)
         data = b''
         packet = headerObject.create_packet(headerObject.get_header(),data)
@@ -36,15 +41,20 @@ def successful_handshake(serverSocket):
         print("No SYN received.")
         return False
 
-#Not done yet.
-def tear_down_connection():
-    return False
+def connection_teardown(serverSocket, clientAddress):
+    #Create FIN-ACK packet.
+    header = Header(0,0,finackflag,header_format)
+    data = b''
+    packet = header.create_packet(header.get_header(),data)
+    
+    #Sending FIN-ACK packet before closing connection
+    serverSocket.sendto(packet,clientAddress)
+    serverSocket.close()
 
 def serverFunction(ip, port):
     serverSocket = socket(AF_INET, SOCK_DGRAM)
     serverSocket.bind((ip, port))
     print ('The server is ready to receive')
-    
     file = open("result.jpg","wb")
     
     if successful_handshake(serverSocket):
@@ -54,19 +64,17 @@ def serverFunction(ip, port):
             seq, ack, flags = Header.parse_header(header_format, header)
             
             if Header.fin_flag(flags):
+                connection_teardown(serverSocket, clientAddress)
                 break
             
             file.write(data)
             print(f"{datetime.datetime.now()} packet {seq} is received")
             
-            #Create ACK packet.
-            flag = 4 #ACK flag set.
-            header = Header(seq,seq,flag,header_format)
+            #Create SYN-ACK packet.
+            header = Header(seq,seq,synackflag,header_format)
             data = b''
             packet = header.create_packet(header.get_header(),data)
-            #Send ACK packet.
+            
+            #Send SYN-ACK packet.
             serverSocket.sendto(packet,clientAddress)
             print(f"{datetime.datetime.now()} sending ack for the received {seq}")
-            
-        tear_down_connection()
-        serverSocket.close()

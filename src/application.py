@@ -51,8 +51,8 @@ else:
             client.clientFunction(args.ip, args.port, args.file)
             print(f"The client is running with IP address = {args.ip} and port address = {args.port}. Transferring file: {args.file}.")
             print("Sending file packets.")
-        except:
-            print("Cannot find the file.")
+        except Exception as e:
+            print(f"ClientFunction did not function: {e}")
     elif args.client:
         print("You must provide filename of the file you want to send.")
     else:
