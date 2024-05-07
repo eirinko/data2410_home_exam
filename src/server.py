@@ -56,7 +56,10 @@ def serverFunction(ip, port):
     serverSocket.bind((ip, port))
     print ('The server is ready to receive')
     file = open("result.jpg","wb")
-    
+    #Go-Back-N function:
+    #The receiver receives frames in order, sending an ACK for each one. 
+    #If it receives a frame out of order, it discards 
+    #it and re-sends an ACK for the last correct frame.
     if successful_handshake(serverSocket):
         while True:
             packet, clientAddress = serverSocket.recvfrom(1000)

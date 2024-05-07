@@ -44,13 +44,15 @@ else:
     if args.server and args.client:
         print("You cannot use both at the same time.")
     elif args.server:
-        server.serverFunction(args.ip,args.port)
-        print(f"The server is running with IP address = {args.ip} and port address = {args.port}.")
+        #Calling function serverFunction from server.py
+        try:
+            server.serverFunction(args.ip, args.port)
+        except Exception as e:
+            print(f"server.serverFunction does not work. Exception: {e}")
     elif args.client and args.file:
         try:
-            client.clientFunction(args.ip, args.port, args.file)
-            print(f"The client is running with IP address = {args.ip} and port address = {args.port}. Transferring file: {args.file}.")
-            print("Sending file packets.")
+            #Calling function clientFunction from client.py
+            client.clientFunction(args.ip, args.port, args.file, args.window)
         except Exception as e:
             print(f"ClientFunction did not function: {e}")
     elif args.client:
