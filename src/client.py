@@ -17,6 +17,7 @@ def successful_handshake(clientSocket, ip, port):
     packet = synheader.create_packet(synheader.get_header(),data)
     clientSocket.sendto(packet, (ip, port))
     print("SYN packet is sent")
+    #Need to add a timeout. If it takes longer than 500 ms, it should print else-part. 
     
     #Check if a SYN-ACK is received.
     synackpacket, serverAddress = clientSocket.recvfrom(1000)
@@ -51,6 +52,8 @@ def connection_teardown(clientSocket, ip, port):
     finackpacket, serverAddress = clientSocket.recvfrom(1000)
     header, data = Header.unpack_packet(finackpacket,header_format)
     seq, ack, flags = Header.parse_header(header_format, header)
+    
+    #OBS OBS! Should change from finack to just finflag.
     if flags == finackflag:
         print("FIN ACK packet is received")
         clientSocket.close()
@@ -65,14 +68,18 @@ def clientFunction(ip, port, file, window):
         data = opened_file.read(994)
         seq = 1
         ack = 0
+        expected_ack = 1
         print("Data Transfer:")
         while data:
             #Now it just sends all the information without waiting for acks. 
             synheader = Header(seq,ack,synflag,header_format)
             packet = synheader.create_packet(synheader.get_header(),data)
-            
             clientSocket.sendto(packet,(ip,port))
             print(f"{datetime.datetime.now()} -- packet with seq = {seq} is sent")
+            
+            synackpacket, serverAddress = clientSocket.recvfrom(1000)
+            header, data = Header.unpack_packet(synackpacket,header_format)
+            seq, ack, flags = Header.parse_header(header_format, header)
             
             data = opened_file.read(994)
             seq+=1
@@ -80,8 +87,8 @@ def clientFunction(ip, port, file, window):
         print("DATA Finished")
         
         #After sending all the data, we stop the connection. 
-        connection_teardown(clientSocket, ip, port)
+        #connection_teardown(clientSocket, ip, port)
         print("Connection stopped")
     else:
         print("The handshake was unsuccessful.")
-    clientSocket.close()
+    #clientSocket.close()

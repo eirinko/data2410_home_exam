@@ -5,6 +5,7 @@ import client
 import server
 from inputtest import *
 from header import *
+import time
 
 #Definition of unit tests:
 '''
@@ -51,8 +52,12 @@ else:
             print(f"server.serverFunction does not work. Exception: {e}")
     elif args.client and args.file:
         try:
+            start_time = time.time()
             #Calling function clientFunction from client.py
             client.clientFunction(args.ip, args.port, args.file, args.window)
+            end_time = time.time()
+            total_time = end_time - start_time
+            print(f"Time of sending file: {total_time}")
         except Exception as e:
             print(f"ClientFunction did not function: {e}")
     elif args.client:

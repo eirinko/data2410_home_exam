@@ -60,6 +60,8 @@ def serverFunction(ip, port):
     #The receiver receives frames in order, sending an ACK for each one. 
     #If it receives a frame out of order, it discards 
     #it and re-sends an ACK for the last correct frame.
+    lowest_seq = 1
+    highest_seq = 3
     if successful_handshake(serverSocket):
         while True:
             packet, clientAddress = serverSocket.recvfrom(1000)
@@ -71,7 +73,7 @@ def serverFunction(ip, port):
                 break
             
             file.write(data)
-            print(f"{datetime.datetime.now()} packet {seq} is received")
+            print(f"{datetime.datetime.now()} -- packet {seq} is received")
             
             #Create SYN-ACK packet.
             header = Header(seq,seq,synackflag,header_format)
@@ -80,4 +82,4 @@ def serverFunction(ip, port):
             
             #Send SYN-ACK packet.
             serverSocket.sendto(packet,clientAddress)
-            print(f"{datetime.datetime.now()} sending ack for the received {seq}")
+            print(f"{datetime.datetime.now()} -- sending ack for the received {seq}")
