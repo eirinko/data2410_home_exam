@@ -22,7 +22,7 @@ def successful_handshake(clientSocket, ip, port):
         clientSocket.settimeout(0.5)
         synackpacket, serverAddress = clientSocket.recvfrom(1000)
         header, data = Header.unpack_packet(synackpacket,header_format)
-        seq, ack, flags = Header.parse_header(header_format, header)
+        seq, ack, flags = header.parse_header()
         
         if (Header.syn_flag(flags) and Header.ack_flag(flags)):
             print("Client: SYN-ACK packet is received")
@@ -57,7 +57,7 @@ def connection_teardown(clientSocket, ip, port):
         clientSocket.settimeout(0.5)
         ackpacket, serverAddress = clientSocket.recvfrom(1000)
         header, data = Header.unpack_packet(ackpacket,header_format)
-        seq, ack, flags = Header.parse_header(header_format, header)
+        seq, ack, flags = header.parse_header()
         
         if flags == ackflag:
             print("Client: FIN packet is received")
@@ -87,6 +87,7 @@ def clientFunction(ip, port, file, window):
             packets.append(packet)
             data = opened_file.read(994)
             seq+=1
+        print(f"Antall packets: {len(packets)}")
         
         print("Client: Data Transfer:")
         for i in range(lowest_seq-1,highest_seq): #To reflect index of packets
@@ -100,18 +101,18 @@ def clientFunction(ip, port, file, window):
                 clientSocket.settimeout(0.5)
                 synackpacket, serverAddress = clientSocket.recvfrom(1000)
                 header, data = Header.unpack_packet(synackpacket,header_format)
-                seq, ack, flags = Header.parse_header(header_format, header)
-                
-                if (ack == len(packets)):
-                    connection_teardown(clientSocket,ip,port)
-                    print("Client: Connection stopped")
-                    break
+                seq, ack, flags = header.parse_header()
                 
                 if (ack==lowest_seq):
                     lowest_seq+=1
-                    highest_seq+=1
-                    clientSocket.sendto(packets[highest_seq-1],(ip,port))
-                    print(f"{datetime.datetime.now()} -- packet with seq = {seq} is sent")
+                    if (len(packets)>highest_seq):
+                        highest_seq+=1
+                        clientSocket.sendto(packets[highest_seq-1],(ip,port))
+                        print(f"{datetime.datetime.now()} -- packet with seq = {highest_seq} is sent")
+                    elif (len(packets)==highest_seq):
+                        connection_teardown(clientSocket,ip,port)
+                        print("Client: Connection stopped")
+                        break
                 else:
                     #TODO: def from_seq_to_index()
                     clientSocket.sendto(packets[ack],(ip,port))
@@ -119,7 +120,7 @@ def clientFunction(ip, port, file, window):
                     #TODO: def sendPacket()
                     
             except Exception as e:
-                print(f"Client: Wasn't able to receive any acks.")
+                print(f"Client: Wasn't able to receive any acks. Exception: {e}")
         print("Client: DATA Finished")
     else:
         print("Client: The handshake was unsuccessful.")

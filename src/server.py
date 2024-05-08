@@ -13,10 +13,10 @@ synackflag = 12
 
 def successful_handshake(serverSocket):
     #Three-way handshake
-    #Starting with checking the flags of the received packet
     packet, clientAddress = serverSocket.recvfrom(1000)
     header, data = Header.unpack_packet(packet,header_format)
-    seq, ack, flags = Header.parse_header(header_format, header)
+    seq, ack, flags = header.parse_header()
+    #Only proceed with handshake if the syn_flag is activated.
     if (Header.syn_flag(flags)):
         print("Server: SYN packet is received")
         sequence_number = 0
@@ -26,11 +26,11 @@ def successful_handshake(serverSocket):
         packet = headerObject.create_packet(headerObject.get_header(),data)
         serverSocket.sendto(packet,clientAddress)
         print("Server: SYN-ACK packet is sent")
-        
-        #Checking the flags of the next received packet.
         packet, clientAddress = serverSocket.recvfrom(1000)
         header, data = Header.unpack_packet(packet,header_format)
-        seq, ack, flags = Header.parse_header(header_format, header)
+        seq, ack, flags = header.parse_header()
+        
+        #Only proceed with handshake if the syn_flag is activated.
         if (Header.ack_flag(flags)):
             print("Server: ACK packet is received")
             print("Server: Connection established")
@@ -52,7 +52,7 @@ def connection_teardown(serverSocket, clientAddress):
     serverSocket.sendto(packet,clientAddress)
     serverSocket.close()
 
-def serverFunction(ip, port):
+def serverFunction(ip, port, discard):
     serverSocket = socket(AF_INET, SOCK_DGRAM)
     serverSocket.bind((ip, port))
     print ('The server is ready to receive')
@@ -68,11 +68,14 @@ def serverFunction(ip, port):
                 serverSocket.settimeout(0.5)
                 packet, clientAddress = serverSocket.recvfrom(1000)
                 header, data = Header.unpack_packet(packet,header_format)
-                seq, ack, flags = Header.parse_header(header_format, header)
+                seq, ack, flags = header.parse_header()
                 
                 if Header.fin_flag(flags):
                     connection_teardown(serverSocket, clientAddress)
                     break
+                
+                if seq==discard:
+                    discard=-1
                 elif seq==last_seq_acked+1:
                     print(f"Server: {datetime.datetime.now()} -- packet {seq} is received")
                     file.write(data)
@@ -84,6 +87,7 @@ def serverFunction(ip, port):
                 data = b''
                 packet = header.create_packet(header.get_header(),data)
                 serverSocket.sendto(packet,clientAddress)
+                print(f"ACK sent from server for seq: {seq}")
             except Exception as e:
                 print(f"Exception: {e}")
         

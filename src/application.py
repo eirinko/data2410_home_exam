@@ -32,8 +32,6 @@ parser.add_argument('-i', '--ip', type=str, default="127.0.0.1")
 parser.add_argument('-f', '--file', type=str)
 parser.add_argument('-w', '--window', type=int, default=3)
 parser.add_argument('-d', '--discard', type=int, default=0)
-#Make sure you change the value to an infinitely large
-#number after your first check, in order to avoid skipping seq=11 all the time.
 
 args = parser.parse_args()
 
@@ -47,7 +45,7 @@ else:
     elif args.server:
         #Calling function serverFunction from server.py
         try:
-            server.serverFunction(args.ip, args.port)
+            server.serverFunction(args.ip, args.port, args.discard)
         except Exception as e:
             print(f"server.serverFunction did not work as expected. Exception: {e}")
     elif args.client and args.file:
