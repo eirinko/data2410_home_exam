@@ -4,6 +4,7 @@
 
 import argparse
 from header import *
+import os
 
 header_format = '!HHH'
 finflag = 2
@@ -29,13 +30,27 @@ while data:
     packet = synheader.create_packet(synheader.get_header(),data)
     packets.append(packet)
     data = opened_file.read(994)
+    print(seq)
     seq+=1
-    
 opened_file.close()
 
 for packet in packets:
+    print(packets.index(packet))
     header, data = Header.unpack_packet(packet,header_format)
     seq, ack, flags = Header.parse_header(header_format, header)
     result_file.write(data)
     
 print(f"Number of packets: {len(packets)}")
+
+
+
+# Replace 'your_file_path' with the actual file path
+file_path = 'result.jpg'
+
+try:
+    file_size = os.path.getsize(file_path)
+    print(f"File Size in Bytes is {file_size}")
+except FileNotFoundError:
+    print("File not found.")
+except OSError:
+    print("OS error occurred.")

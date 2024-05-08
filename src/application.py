@@ -49,7 +49,7 @@ else:
         try:
             server.serverFunction(args.ip, args.port)
         except Exception as e:
-            print(f"server.serverFunction does not work. Exception: {e}")
+            print(f"server.serverFunction did not work as expected. Exception: {e}")
     elif args.client and args.file:
         try:
             start_time = time.time()
@@ -59,7 +59,7 @@ else:
             total_time = end_time - start_time
             print(f"Time of sending file: {total_time}")
         except Exception as e:
-            print(f"ClientFunction did not function: {e}")
+            print(f"client.clientFunction did not work as expected. Exception: {e}")
     elif args.client:
         print("You must provide filename of the file you want to send.")
     else:
