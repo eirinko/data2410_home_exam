@@ -15,12 +15,12 @@ synackflag = 12
 start_time = None
 end_time = None
 
+#Three-way handshake
 def successful_handshake(serverSocket):
-    #Three-way handshake
     packet, clientAddress = serverSocket.recvfrom(1000)
-    
     header, data = Header.unpack_packet(packet,header_format)
     seq, ack, flags = header.parse_header()
+    
     #Only proceed with handshake if the syn_flag is activated.
     if (Header.syn_flag(flags)):
         print("SYN packet is received")
@@ -93,14 +93,20 @@ def connection_teardown(serverSocket, clientAddress):
     serverSocket.sendto(packet,clientAddress)
     print("ACK packet is sent\n")
 
+def receive_packet(udpsocket):
+    udpsocket.settimeout(0.5)
+    packet, address = udpsocket.recvfrom(1000)
+    header, data = Header.unpack_packet(packet,header_format)
+    seq, ack, flags = header.parse_header()
+    return address, header, data, seq, ack, flags
+
 def serverFunction(ip, port, discard):
     serverSocket = socket(AF_INET, SOCK_DGRAM)
     serverSocket.bind((ip, port))
+    
+    #Creating a file where data from the received packets can be appended.
     file = open("result.jpg","wb")
-    #Go-Back-N function:
-    #The receiver receives frames in order, sending an ACK for each one. 
-    #If it receives a frame out of order, it discards it
-    #and re-sends an ACK for the last correct frame.
+    
     if successful_handshake(serverSocket):
         #Starting the timer when the server has connected to the client.
         start_time = time.time()
@@ -108,10 +114,7 @@ def serverFunction(ip, port, discard):
         last_seq_acked = 0
         while True:
             try:
-                serverSocket.settimeout(0.5)
-                packet, clientAddress = serverSocket.recvfrom(1000)
-                header, data = Header.unpack_packet(packet,header_format)
-                seq, ack, flags = header.parse_header()
+                clientAddress, header, data, seq, ack, flags = receive_packet(serverSocket)
                 
                 if Header.fin_flag(flags):
                     print("FIN packet is received")

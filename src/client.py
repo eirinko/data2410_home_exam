@@ -1,6 +1,7 @@
 from socket import *
 from header import *
 import datetime
+from server import receive_packet
 
 header_format = '!HHH'
 finflag = 2
@@ -19,10 +20,7 @@ def successful_handshake(clientSocket, ip, port):
     print("SYN packet is sent")
     #Check if a SYN-ACK is received.
     try:
-        clientSocket.settimeout(0.5)
-        synackpacket, serverAddress = clientSocket.recvfrom(1000)
-        header, data = Header.unpack_packet(synackpacket,header_format)
-        seq, ack, flags = header.parse_header()
+        serverAddress, header, data, seq, ack, flags = receive_packet(clientSocket)
         
         if (Header.syn_flag(flags) and Header.ack_flag(flags)):
             print("SYN-ACK packet is received")
@@ -54,10 +52,7 @@ def connection_teardown(clientSocket, ip, port):
     
     #Check if an ACK is received.
     try:
-        clientSocket.settimeout(0.5)
-        ackpacket, serverAddress = clientSocket.recvfrom(1000)
-        header, data = Header.unpack_packet(ackpacket,header_format)
-        seq, ack, flags = header.parse_header()
+        serverAddress, header, data, seq, ack, flags = receive_packet(clientSocket)
         
         if flags == ackflag:
             print("ACK packet is received")
@@ -88,7 +83,6 @@ def clientFunction(ip, port, file, window):
     if successful_handshake(clientSocket, ip, port):
         #Creating a list of all the packets that will be sent
         packets = prepare_packets(file)
-        ack = 0
         lowest_seq = 1
         highest_seq = window
         
@@ -101,11 +95,7 @@ def clientFunction(ip, port, file, window):
         while True:
             #TODO: What if the cumulative window size of file is smaller than window size?
             try:
-                clientSocket.settimeout(0.5)
-                synackpacket, serverAddress = clientSocket.recvfrom(1000)
-                header, data = Header.unpack_packet(synackpacket,header_format)
-                seq, ack, flags = header.parse_header()
-                
+                serverAddress, header, data, seq, ack, flags = receive_packet(clientSocket)
                 if (ack==lowest_seq):
                     print(f"{datetime.datetime.now().time()} -- ACK for packet = {ack} is received")
                     lowest_seq+=1
@@ -120,7 +110,7 @@ def clientFunction(ip, port, file, window):
                 else:
                     clientSocket.sendto(packets[ack],(ip,port))
                     print(f"{datetime.datetime.now().time()} -- packet with seq = {seq} is sent")
-                    #TODO: def sendPacket(packet)
+                    #TODO: def sendPacket(packet), but might be to many variations?
             except Exception as e:
                 print(f"Wasn't able to receive any acks. Exception: {e}")
     else:
