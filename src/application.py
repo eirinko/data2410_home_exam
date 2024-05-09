@@ -5,7 +5,6 @@ import client
 import server
 from inputtest import *
 from header import *
-import time
 
 #Definition of unit tests:
 '''
@@ -41,7 +40,9 @@ elif not ip_ok(args.ip):
     print("Invalid IP. It must in this format: 10.1.2.3")
 else:
     if args.server and args.client:
-        print("You cannot use both at the same time.")
+        print("You cannot use both server and client at the same time.")
+    elif args.server and args.file:
+        print("Use the client for sending a file.")
     elif args.server:
         #Calling function serverFunction from server.py
         try:
@@ -50,12 +51,8 @@ else:
             print(f"server.serverFunction did not work as expected. Exception: {e}")
     elif args.client and args.file:
         try:
-            start_time = time.time()
             #Calling function clientFunction from client.py
             client.clientFunction(args.ip, args.port, args.file, args.window)
-            end_time = time.time()
-            total_time = end_time - start_time
-            print(f"Time of sending file: {total_time}")
         except Exception as e:
             print(f"client.clientFunction did not work as expected. Exception: {e}")
     elif args.client:
