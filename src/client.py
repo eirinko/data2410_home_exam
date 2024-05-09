@@ -67,33 +67,36 @@ def connection_teardown(clientSocket, ip, port):
     except Exception as e:
         print(f"Didn't receive an ACK for the FIN. Exception: {e}")
 
+def prepare_packets(file):
+    seq = 1
+    ack = 0
+    opened_file = open(file,"rb")
+    data = opened_file.read(994)
+    packets = []
+    while data:
+        synheader = Header(seq,ack,synflag,header_format)
+        packet = synheader.create_packet(synheader.get_header(),data)
+        packets.append(packet)
+        data = opened_file.read(994)
+        seq+=1
+    return packets
+
 def clientFunction(ip, port, file, window):
     clientSocket = socket(AF_INET, SOCK_DGRAM)
     print("Connection Establishment Phase:\n")
     
     if successful_handshake(clientSocket, ip, port):
-        opened_file = open(file,"rb")
-        seq = 1
+        #Creating a list of all the packets that will be sent
+        packets = prepare_packets(file)
         ack = 0
         lowest_seq = 1
         highest_seq = window
-
-        #Creating a list of all the packets that will be sent
-        data = opened_file.read(994)
-        packets = []
-        while data:
-            synheader = Header(seq,ack,synflag,header_format)
-            packet = synheader.create_packet(synheader.get_header(),data)
-            packets.append(packet)
-            data = opened_file.read(994)
-            seq+=1
         
         print("Data Transfer:\n")
         #TODO: Add sliding window information to the printed string.
         for i in range(lowest_seq-1,highest_seq): #To reflect index of packets
             seq = i+1
             clientSocket.sendto(packets[i],(ip,port))
-            
             print(f"{datetime.datetime.now().time()} -- packet with seq = {seq} is sent, sliding window ...")
         while True:
             #TODO: What if the cumulative window size of file is smaller than window size?
@@ -107,21 +110,18 @@ def clientFunction(ip, port, file, window):
                     print(f"{datetime.datetime.now().time()} -- ACK for packet = {ack} is received")
                     lowest_seq+=1
                     if (len(packets)>highest_seq):
+                        clientSocket.sendto(packets[highest_seq],(ip,port))
                         highest_seq+=1
-                        clientSocket.sendto(packets[highest_seq-1],(ip,port))
                         print(f"{datetime.datetime.now().time()} -- packet with seq = {highest_seq} is sent")
-                    elif (len(packets)==highest_seq):
+                    elif (len(packets)==ack):
                         print("DATA Finished\n")
                         connection_teardown(clientSocket,ip,port)
                         break
                 else:
-                    #TODO: def from_seq_to_index()
                     clientSocket.sendto(packets[ack],(ip,port))
                     print(f"{datetime.datetime.now().time()} -- packet with seq = {seq} is sent")
-                    #TODO: def sendPacket()
-                    
+                    #TODO: def sendPacket(packet)
             except Exception as e:
                 print(f"Wasn't able to receive any acks. Exception: {e}")
-        
     else:
         print("The handshake was unsuccessful.")
