@@ -62,6 +62,7 @@ def print_throughput(start_time, end_time):
             print("Start time not captured. Not possible to calculate Mbps.")
         else:
             total_time = end_time - start_time
+        print(f"Total time elapsed: {total_time}")
         
         #Returns size in bytes and will therefore multiply with 8
         file_size = os.path.getsize("result.jpg")*8
@@ -136,11 +137,15 @@ def serverFunction(ip, port, discard):
                     last_seq_acked=seq
                 else: 
                     print(f"{datetime.datetime.now().time()} -- out-of-order packet {seq} is received")
-                #Create and send ACK packet.
-                header = Header(seq,last_seq_acked,ackflag,header_format)
+            except Exception as e:
+                print(f"Exception: {e}")
+            
+            #Create and send ACK packet.
+            try:
+                header = Header(last_seq_acked,last_seq_acked,ackflag,header_format)
                 data = b''
                 packet = header.create_packet(header.get_header(),data)
                 serverSocket.sendto(packet,clientAddress)
-                print(f"{datetime.datetime.now().time()} -- sending ack for the received {seq}")
+                print(f"{datetime.datetime.now().time()} -- sending ack for the received {last_seq_acked}")
             except Exception as e:
-                print(f"Exception: {e}")
+                print(f"Tried to send ACK for packet {last_seq_acked}, but failed: {e}")

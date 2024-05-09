@@ -59,7 +59,7 @@ def connection_teardown(clientSocket, ip, port):
             clientSocket.close()
             print("Connection Closes")
             
-    except Exception as e:
+    except TimeoutError as e:
         print(f"Didn't receive an ACK for the FIN. Exception: {e}")
 
 def prepare_packets(file):
@@ -95,6 +95,7 @@ def clientFunction(ip, port, file, window):
         while True:
             #TODO: What if the cumulative window size of file is smaller than window size?
             try:
+                #What happens if an ACK disappear? 
                 serverAddress, header, data, seq, ack, flags = receive_packet(clientSocket)
                 if (ack==lowest_seq):
                     print(f"{datetime.datetime.now().time()} -- ACK for packet = {ack} is received")

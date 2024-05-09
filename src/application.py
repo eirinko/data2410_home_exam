@@ -20,6 +20,8 @@ from header import *
     """
 '''
 
+#TODO: Write better help text for the args.
+
 #Used the code from args.py in oblig 1, with modifications:
 parser = argparse.ArgumentParser(description='simple args')
 
@@ -44,17 +46,9 @@ else:
     elif args.server and args.file:
         print("Use the client for sending a file.")
     elif args.server:
-        #Calling function serverFunction from server.py
-        try:
-            server.serverFunction(args.ip, args.port, args.discard)
-        except Exception as e:
-            print(f"server.serverFunction did not work as expected. Exception: {e}")
+        server.serverFunction(args.ip, args.port, args.discard)
     elif args.client and args.file:
-        try:
-            #Calling function clientFunction from client.py
-            client.clientFunction(args.ip, args.port, args.file, args.window)
-        except Exception as e:
-            print(f"client.clientFunction did not work as expected. Exception: {e}")
+        client.clientFunction(args.ip, args.port, args.file, args.window)
     elif args.client:
         print("You must provide filename of the file you want to send.")
     else:
