@@ -4,6 +4,14 @@ import datetime
 from server import receive_packet
 from utils import *
 
+'''
+Function initiating a three-way handshake.
+It receives the parameters clientSocket, ip and port.
+Starts by sending a SYN-packet and checking if it receives a SYN-ACK-packet in return.
+If it receives the SYN-ACK-packet, it sends an ACK-packet, and the handshake is successful.
+If something fails along the way, the handshake is unsuccessful.
+Returns True for success and False if it fails. 
+'''
 def successful_handshake(clientSocket, ip, port):
     seq = 0
     ack = 0
@@ -12,20 +20,22 @@ def successful_handshake(clientSocket, ip, port):
     packet = create_packet(synheader.get_header(),data)
     clientSocket.sendto(packet, (ip, port))
     print("SYN packet is sent")
-    #Checking if a SYN-ACK is received.
+    
     try:
         clientSocket.settimeout(0.5)
         _, _, data, seq, ack, flags = receive_packet(clientSocket)
-        
+        #Checking if it receives a SYN-ACK packet.
         if (flags == SYNACKFLAG):
             print("SYN-ACK packet is received")
             
-            #After SYN-ACK is received, send an ACK:
+            #If SYN-ACK is received, send an ACK.
             ackheader = Header(seq,ack,ACKFLAG)
             data = b''
             packet = create_packet(ackheader.get_header(),data)
             clientSocket.sendto(packet, (ip, port))
             print("ACK packet is sent")
+            
+            #The connection is successful from the client side.
             print("Connection established\n")
             return True
         else:
@@ -35,29 +45,37 @@ def successful_handshake(clientSocket, ip, port):
         print(f"Timeout exception: {e}.")
         clientSocket.close()
 
+'''
+Function used to stop the connection and close the socket.
+Takes clientSocket, ip and port as arguments.
+Initiates by sending a FIN-packet to the server.
+If it receives an ACK-packet in return, the client Socket can close.
+Returns nothing.
+'''
 def connection_teardown(clientSocket, ip, port):
     print("Connection Teardown:\n")
-    seq = 0
-    ack = 0
     data = b''
-    finheader = Header(seq,ack,FINFLAG)
+    finheader = Header(0,0,FINFLAG)
     packet = create_packet(finheader.get_header(),data)
     clientSocket.sendto(packet,(ip,port))
     print("FIN packet is sent")
     
-    #Checking if an ACK is received.
+    #Checking if the socket receives an ACK-packet.
     try:
         clientSocket.settimeout(0.5)
-        _, _, data, seq, ack, flags = receive_packet(clientSocket)
-        
+        _, _, _, _, _, flags = receive_packet(clientSocket)
         if flags == ACKFLAG:
             print("ACK packet is received")
             clientSocket.close()
             print("Connection Closes")
-            
     except TimeoutError as e:
         print(f"Didn't receive an ACK for the FIN. Exception: {e}")
 
+'''
+Function takes file path as argument and
+creates packets of data size 994 bytes.
+Returns a list with all the packets stored.
+'''
 def prepare_packets(file):
     seq = 1
     ack = 0
@@ -72,6 +90,9 @@ def prepare_packets(file):
         seq+=1
     return packets
 
+'''
+
+'''
 def clientFunction(ip, port, file, window):
     clientSocket = socket(AF_INET, SOCK_DGRAM)
     print("Connection Establishment Phase:\n")
