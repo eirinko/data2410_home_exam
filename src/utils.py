@@ -2,6 +2,12 @@ import ipaddress
 import os
 from header import *
 import sys
+import datetime
+
+'''Function used to make the print to terminal shorter. Returns timestand (hour, min, sek, ms)'''
+def timestamp():
+    return datetime.datetime.now().time()
+
 
 '''Function for checking if the IP address is ok, returns boolean'''
 def ip_ok(ip):
@@ -14,6 +20,7 @@ def ip_ok(ip):
 '''Function for checking if the port is in range, returns boolean'''
 def port_ok(port):
     return port in range(1024,65536)
+
 
 '''Function for printing the throughput based on how much data
 was received and how much time elapsed during the connection.
@@ -51,14 +58,15 @@ def print_throughput(start_time, end_time):
     except OSError:
         print("OS error occurred.")
 
+
 '''Function for receiving packets via UDP.
-It unpacks the packet and 
-returns sender address, header, data, seq, ack and flags.'''
+It unpacks the packet and returns sender address, header, data, seq, ack and flags.'''
 def receive_packet(udpsocket):
     packet, address = udpsocket.recvfrom(1000)
     header, data = unpack_packet(packet)
     seq, ack, flags = header.parse_header()
     return address, header, data, seq, ack, flags
+
 
 '''
 ''' # geir part of header module?
@@ -67,11 +75,13 @@ def create_header_from_packet(packet):
     seq, ack, flags = unpack(HEADER_FORMAT, header)
     return Header(seq, ack, flags)
 
+
 '''Accepts a packet and returns a tuple with the header and data'''
 def unpack_packet(packet):
     header = create_header_from_packet(packet)
     data = packet[calcsize(HEADER_FORMAT):]
     return header, data
+
 
 '''Adds the header and the data together and returns it.'''
 def create_packet(header, data):
