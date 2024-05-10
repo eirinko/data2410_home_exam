@@ -3,7 +3,7 @@ import argparse
 from socket import *
 import client
 import server
-from inputtest import *
+from utils import *
 from header import *
 
 #Definition of unit tests:

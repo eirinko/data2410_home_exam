@@ -2,33 +2,28 @@ from socket import *
 from header import *
 import datetime
 from server import receive_packet
-
-header_format = '!HHH'
-finflag = 2
-ackflag = 4
-finackflag = 6
-synflag = 8
-synackflag = 12
+from utils import *
 
 def successful_handshake(clientSocket, ip, port):
-    sequence_number = 0
-    acknowledgment_number = 0
-    synheader = Header(sequence_number,acknowledgment_number,synflag,header_format)
+    seq = 0
+    ack = 0
+    synheader = Header(seq,ack,SYNFLAG)
     data = b''
-    packet = synheader.create_packet(synheader.get_header(),data)
+    packet = create_packet(synheader.get_header(),data)
     clientSocket.sendto(packet, (ip, port))
     print("SYN packet is sent")
-    #Check if a SYN-ACK is received.
+    #Checking if a SYN-ACK is received.
     try:
-        serverAddress, header, data, seq, ack, flags = receive_packet(clientSocket)
+        clientSocket.settimeout(0.5)
+        _, _, data, seq, ack, flags = receive_packet(clientSocket)
         
-        if (Header.syn_flag(flags) and Header.ack_flag(flags)):
+        if (flags == SYNACKFLAG):
             print("SYN-ACK packet is received")
             
             #After SYN-ACK is received, send an ACK:
-            ackheader = Header(sequence_number,acknowledgment_number,ackflag,header_format)
+            ackheader = Header(seq,ack,ACKFLAG)
             data = b''
-            packet = ackheader.create_packet(ackheader.get_header(),data)
+            packet = create_packet(ackheader.get_header(),data)
             clientSocket.sendto(packet, (ip, port))
             print("ACK packet is sent")
             print("Connection established\n")
@@ -45,16 +40,17 @@ def connection_teardown(clientSocket, ip, port):
     seq = 0
     ack = 0
     data = b''
-    finheader = Header(seq,ack,finflag,header_format)
-    packet = finheader.create_packet(finheader.get_header(),data)
+    finheader = Header(seq,ack,FINFLAG)
+    packet = create_packet(finheader.get_header(),data)
     clientSocket.sendto(packet,(ip,port))
     print("FIN packet is sent")
     
-    #Check if an ACK is received.
+    #Checking if an ACK is received.
     try:
-        serverAddress, header, data, seq, ack, flags = receive_packet(clientSocket)
+        clientSocket.settimeout(0.5)
+        _, _, data, seq, ack, flags = receive_packet(clientSocket)
         
-        if flags == ackflag:
+        if flags == ACKFLAG:
             print("ACK packet is received")
             clientSocket.close()
             print("Connection Closes")
@@ -69,8 +65,8 @@ def prepare_packets(file):
     data = opened_file.read(994)
     packets = []
     while data:
-        synheader = Header(seq,ack,synflag,header_format)
-        packet = synheader.create_packet(synheader.get_header(),data)
+        synheader = Header(seq,ack,SYNFLAG)
+        packet = create_packet(synheader.get_header(),data)
         packets.append(packet)
         data = opened_file.read(994)
         seq+=1
@@ -95,19 +91,22 @@ def clientFunction(ip, port, file, window):
         while True:
             #TODO: What if the cumulative window size of file is smaller than window size?
             try:
-                #What happens if an ACK disappear? 
-                serverAddress, header, data, seq, ack, flags = receive_packet(clientSocket)
+                clientSocket.settimeout(0.5)
+                _, _, _, seq, ack, _ = receive_packet(clientSocket)
                 if (ack==lowest_seq):
                     print(f"{datetime.datetime.now().time()} -- ACK for packet = {ack} is received")
                     lowest_seq+=1
+                    
                     if (len(packets)>highest_seq):
                         clientSocket.sendto(packets[highest_seq],(ip,port))
                         highest_seq+=1
                         print(f"{datetime.datetime.now().time()} -- packet with seq = {highest_seq} is sent")
+                    
                     elif (len(packets)==ack):
                         print("DATA Finished\n")
                         connection_teardown(clientSocket,ip,port)
                         break
+                
                 else:
                     clientSocket.sendto(packets[ack],(ip,port))
                     print(f"{datetime.datetime.now().time()} -- packet with seq = {seq} is sent")
