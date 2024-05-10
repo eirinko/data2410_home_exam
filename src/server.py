@@ -17,9 +17,7 @@ def successful_handshake(serverSocket):
         g_start_time = time.time()
         
         print("SYN packet is received")
-        sequence_number = 0
-        acknowledgment_number = 0
-        headerObject = Header(sequence_number,acknowledgment_number,SYNACKFLAG)
+        headerObject = Header(flags=SYNACKFLAG)
         data = b''
         packet = create_packet(headerObject.get_header(),data)
         serverSocket.sendto(packet,clientAddress)
@@ -40,7 +38,7 @@ def successful_handshake(serverSocket):
 
 def connection_teardown(serverSocket, clientAddress):
     #Create ACK packet.
-    header = Header(0,0,ACKFLAG)
+    header = Header(flags=ACKFLAG)
     data = b''
     packet = create_packet(header.get_header(),data)
     
@@ -80,6 +78,9 @@ def serverFunction(ip, port, discard):
                 if seq==discard:
                     discard=-1
                 elif seq==last_seq_acked+1:
+                    # from datetime import datetime as dt
+                    # def timestamp() datetime.datetime.now().time()
+                    # def log(string) print(f"{datetime.datetime.now().time()} {string}")
                     print(f"{datetime.datetime.now().time()} -- packet {seq} is received")
                     file.write(data)
                     last_seq_acked=seq
@@ -90,7 +91,8 @@ def serverFunction(ip, port, discard):
             
             #Create and send ACK packet.
             try:
-                header = Header(last_seq_acked,last_seq_acked,ACKFLAG)
+                # does the packet header need to have the seq flag set?
+                header = Header(ack=last_seq_acked,flags=ACKFLAG) # header.create_packet_ack_header(last_seq_acked)
                 data = b''
                 packet = create_packet(header.get_header(),data)
                 serverSocket.sendto(packet,clientAddress)

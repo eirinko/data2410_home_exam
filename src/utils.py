@@ -1,11 +1,12 @@
 import ipaddress
 import os
 from header import *
+import sys
 
 '''Function for checking if the IP address is ok, returns boolean'''
 def ip_ok(ip):
     try:
-        val = ipaddress.ip_address(ip)
+        ipaddress.ip_address(ip)
         return True
     except ValueError:
         return False
@@ -14,11 +15,9 @@ def ip_ok(ip):
 def port_ok(port):
     return port in range(1024,65536)
 
-'''
-Function for printing the throughput based on how much data
+'''Function for printing the throughput based on how much data
 was received and how much time elapsed during the connection.
-Takes start_time and end_time as arguments and prints the result.
-'''
+Takes start_time and end_time as arguments and prints the result.'''
 def print_throughput(start_time, end_time):
     try:
         if (end_time == None):
@@ -48,14 +47,13 @@ def print_throughput(start_time, end_time):
         print(f"The throughput is {file_size_ps:.2f} {unit}")
     except FileNotFoundError:
         print("File not found.")
+        sys.exit(1)
     except OSError:
         print("OS error occurred.")
 
-'''
-Function for receiving packets via UDP.
+'''Function for receiving packets via UDP.
 It unpacks the packet and 
-returns sender address, header, data, seq, ack and flags.
-'''
+returns sender address, header, data, seq, ack and flags.'''
 def receive_packet(udpsocket):
     packet, address = udpsocket.recvfrom(1000)
     header, data = unpack_packet(packet)
@@ -63,22 +61,18 @@ def receive_packet(udpsocket):
     return address, header, data, seq, ack, flags
 
 '''
-
-'''
+''' # geir part of header module?
 def create_header_from_packet(packet):
     header = packet[:calcsize(HEADER_FORMAT)]
     seq, ack, flags = unpack(HEADER_FORMAT, header)
     return Header(seq, ack, flags)
 
-
+'''Accepts a packet and returns a tuple with the header and data'''
 def unpack_packet(packet):
-    #Accepts a packet and
-    #returns a tuple with the header and data
     header = create_header_from_packet(packet)
     data = packet[calcsize(HEADER_FORMAT):]
     return header, data
 
-
+'''Adds the header and the data together and returns it.'''
 def create_packet(header, data):
-    #Adds the header and the data together and returns it.
     return header + data
