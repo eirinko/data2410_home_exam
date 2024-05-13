@@ -8,7 +8,7 @@ If it receives the SYN-ACK-packet, it sends an ACK-packet, and the handshake is 
 If something fails along the way, the handshake is unsuccessful.
 Returns True for success and False if it fails. '''
 def successful_handshake(clientSocket, ip, port):
-    synheader = Header(flags=SYNFLAG) # (seg=0) header.create_syn_header()
+    synheader = Header(flags=SYNFLAG) # (seq=0) header.create_syn_header()
     data = b''
     packet = utils.create_packet(synheader.get_header(),data)
     clientSocket.sendto(packet, (ip, port))
@@ -17,15 +17,13 @@ def successful_handshake(clientSocket, ip, port):
     try:
         clientSocket.settimeout(0.5)
         _, _, data, _, _, flags = utils.receive_packet(clientSocket)
-        # flags
-        # header, date = receive_packet(clientSocket)
-        # if header.flags() == SYNACKFLAG
+        
         #Checking if it receives a SYN-ACK packet.
         if (flags == SYNACKFLAG):
             print("SYN-ACK packet is received")
             
             #If SYN-ACK is received, send an ACK.
-            ackheader = Header(flags=ACKFLAG) # header_create_syn_ack_header() , header.create_packet_ack_header(ack)?
+            ackheader = Header(flags=ACKFLAG)
             data = b''
             packet = utils.create_packet(ackheader.get_header(),data)
             clientSocket.sendto(packet, (ip, port))
@@ -102,15 +100,17 @@ def clientFunction(ip, port, file, window):
     if successful_handshake(clientSocket, ip, port):
         #Creating a list of all the packets that will be sent
         packets = prepare_packets(file)
+        
         lowest_seq = 1
         highest_seq = window
         
+        #Sending the packets of the first window. 
         print("Data Transfer:\n")
         for i in range(lowest_seq-1,highest_seq): #To reflect index of packets
             seq = i+1
             clientSocket.sendto(packets[i],(ip,port))
-            print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window_print(lowest_seq, window)}")
-
+            print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window_print(lowest_seq,lowest_seq+i)}")
+        
         retransmit_index = lowest_seq - 1
         while True:
             #TODO: What if the cumulative window size of file is smaller than window size?
@@ -131,10 +131,10 @@ def clientFunction(ip, port, file, window):
                         connection_teardown(clientSocket,ip,port)
                         break
                 else:
+                    print(f"Acknowledge no received is: {ack}")
                     clientSocket.sendto(packets[retransmit_index],(ip,port))
                     print(f"{utils.timestamp()} -- packet with seq = {retransmit_index+1} is sent")
-                    #TODO: def sendPacket(packet), but might be to many variations?
-                    retransmit_index += 1
+                    #retransmit_index = lowest_seq -1
             except Exception as e:
                 print(f"Wasn't able to receive any acks. Exception: {e}")
     else:
