@@ -110,6 +110,8 @@ def clientFunction(ip, port, file, window):
             seq = i+1
             clientSocket.sendto(packets[i],(ip,port))
             print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window_print(lowest_seq, window)}")
+
+        retransmit_index = lowest_seq - 1
         while True:
             #TODO: What if the cumulative window size of file is smaller than window size?
             try:
@@ -118,7 +120,7 @@ def clientFunction(ip, port, file, window):
                 if (ack==lowest_seq):
                     print(f"{utils.timestamp()} -- ACK for packet = {ack} is received")
                     lowest_seq+=1
-                    
+                    retransmit_index = lowest_seq -1
                     if (len(packets)>highest_seq):
                         clientSocket.sendto(packets[highest_seq],(ip,port))
                         highest_seq+=1
@@ -129,9 +131,10 @@ def clientFunction(ip, port, file, window):
                         connection_teardown(clientSocket,ip,port)
                         break
                 else:
-                    clientSocket.sendto(packets[ack],(ip,port))
-                    print(f"{utils.timestamp()} -- packet with seq = {seq} is sent")
+                    clientSocket.sendto(packets[retransmit_index],(ip,port))
+                    print(f"{utils.timestamp()} -- packet with seq = {retransmit_index+1} is sent")
                     #TODO: def sendPacket(packet), but might be to many variations?
+                    retransmit_index += 1
             except Exception as e:
                 print(f"Wasn't able to receive any acks. Exception: {e}")
     else:

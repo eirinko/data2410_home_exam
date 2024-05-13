@@ -53,11 +53,14 @@ def connection_teardown(serverSocket, clientAddress):
     print("ACK packet is sent\n")
 
 
-'''Function for initiating server: starting a UDP socket and using a three-way handshake to connect
-with the client. Will listen for packets until it receives a packet with a FIN-flag, then it will stop the connection.
+'''Function for initiating server, connecting to a client, 
+receiving packets and assembling data to a file and tearing down connection.
+It starts a UDP socket, and uses a three-way handshake to connect
+with the client. Will listen for packets until it receives a packet with a FIN-flag, 
+then it will stop the connection. 
 If it receives a packet out of order, it will send the ACK for the last in-order packet. 
-The data from the packets will be appended to the result.jpg file. 
-It sends and resends ACK packets based on the last in-order packet received.'''
+The data from the packets (that are not part of handshake and connection teardown) 
+will be assembled into a file.'''
 def serverFunction(ip, port, discard):
     serverSocket = socket(AF_INET, SOCK_DGRAM)
     serverSocket.bind((ip, port))
@@ -84,20 +87,21 @@ def serverFunction(ip, port, discard):
                     serverSocket.close()
                     break
                 
-                if seq==discard:
-                    discard=-1
-                elif seq==last_seq_acked+1:
+                if seq == discard:
+                    discard = -1
+                elif seq == last_seq_acked+1:
                     print(f"{utils.timestamp()} -- packet {seq} is received")
                     file.write(data)
-                    last_seq_acked=seq
+                    last_seq_acked = seq
                 else: 
                     print(f"{utils.timestamp()} -- out-of-order packet {seq} is received")
+                    
             except Exception as e:
                 print(f"Exception: {e}")
             
             #Create and send ACK packet.
             try:
-                header = Header(ack=last_seq_acked,flags=ACKFLAG) # header.create_packet_ack_header(last_seq_acked)
+                header = Header(ack=last_seq_acked,flags=ACKFLAG)
                 data = b''
                 packet = utils.create_packet(header.get_header(),data)
                 serverSocket.sendto(packet,clientAddress)
