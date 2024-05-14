@@ -10,17 +10,6 @@ FINACKFLAG = 6
 SYNFLAG = 8
 SYNACKFLAG = 12
 
-# factory method
-# create_header_with_certain_setup -> Header
-
-"""
-class Header:
-    def __init__(self,seq=0,ack=0,flags):
-
-syn_ack_header = Header(flags=SYNACKFLAG)
-
-""" 
-
 class Header:
     def __init__(self,seq=0,ack=0,flags=0):
         #The header gets created when you create a Header instance
@@ -29,8 +18,7 @@ class Header:
         self.ack = ack
         self.flags = flags
     
-    '''Returns the header.
-    '''
+    '''Returns the header.'''
     def get_header(self):
         return self.header
 
@@ -39,16 +27,10 @@ class Header:
     and returns a tuple with the values seq, ack, flags'''
     def parse_header(self):
         return unpack(HEADER_FORMAT, self.header)
-    
-    # def is_syn_ack_set
-        #"syn, ack, flgs = parse_header()
-        #"return syn == 
-    
-# todo test that take in header, test flag etc
 
-# 
 
-if __name__ == "__main__":
-    import doctest
-    #doctest.testmod()
-    #main()
+    '''Takes a packet as an argument and returns a Header.'''
+    def create_header_from_packet(packet):
+        header = packet[:calcsize(HEADER_FORMAT)]
+        seq, ack, flags = unpack(HEADER_FORMAT, header)
+        return Header(seq, ack, flags)

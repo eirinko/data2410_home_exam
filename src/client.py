@@ -8,7 +8,7 @@ If it receives the SYN-ACK-packet, it sends an ACK-packet, and the handshake is 
 If something fails along the way, the handshake is unsuccessful.
 Returns True for success and False if it fails. '''
 def successful_handshake(clientSocket, ip, port):
-    synheader = Header(flags=SYNFLAG) # (seq=0) header.create_syn_header()
+    synheader = Header(flags=SYNFLAG)
     data = b''
     packet = utils.create_packet(synheader.get_header(),data)
     clientSocket.sendto(packet, (ip, port))
@@ -46,21 +46,22 @@ If it receives an ACK-packet in return, the client Socket can close. Returns not
 def connection_teardown(clientSocket, ip, port):
     print("Connection Teardown:\n")
     data = b''
-    finheader = Header(flags=FINFLAG)
+    finheader = Header(flags = FINFLAG)
     packet = utils.create_packet(finheader.get_header(),data)
     clientSocket.sendto(packet,(ip,port))
     print("FIN packet is sent")
     
-    #Checking if the socket receives an ACK-packet.
+    #Checking if the socket receives an ACK-packet
+    # and that it doesn't refer to a seq-no.
     try:
         clientSocket.settimeout(0.5)
         _, _, _, seq, _, flags = utils.receive_packet(clientSocket)
-        if flags == ACKFLAG and seq==0:
-            print("ACK packet is received")
+        if flags == FINACKFLAG and seq == 0:
+            print("FIN ACK packet is received")
             clientSocket.close()
             print("Connection Closes")
     except TimeoutError as e:
-        print(f"Didn't receive an ACK for the FIN. Exception: {e}")
+        print(f"Didn't receive a FIN ACK for the FIN. Exception: {e}")
 
 
 '''Function takes file path as argument and creates packets of data size 994 bytes.
@@ -71,11 +72,11 @@ def prepare_packets(file):
         data = opened_file.read(994)
         packets = []
         while data:
-            synheader = Header(seq=seq,flags=SYNFLAG)
+            synheader = Header(seq = seq,flags = SYNFLAG)
             packet = utils.create_packet(synheader.get_header(),data)
             packets.append(packet)
             data = opened_file.read(994)
-            seq+=1
+            seq += 1
     return packets
 
 
@@ -102,31 +103,35 @@ def clientFunction(ip, port, file, window):
         #Creating a list of all the packets that will be sent
         packets = prepare_packets(file)
         
+        #In case the file is smaller than the window size.
+        if len(packets) < window:
+            window = len(packets)
+        
+        #For storing the sequence numbers in the window.
         window_array = []
         
         #Sending the packets of the first window. 
         print("Data Transfer:\n")
-        for i in range(0, window): #To reflect index of packets
-            seq = i+1
+        for i in range(0, window):
+            seq = i + 1
             window_array.append(seq)
             clientSocket.sendto(packets[i],(ip,port))
             print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window(window_array)}")
         
         while True:
-            #TODO: What if the cumulative window size of file is smaller than window size?
             try:
                 clientSocket.settimeout(0.5)
                 _, _, _, seq, ack, _ = utils.receive_packet(clientSocket)
-                if (ack==window_array[0]):
+                if (ack == window_array[0]):
                     print(f"{utils.timestamp()} -- ACK for packet = {ack} is received")
                     window_array.pop(0) #Remove the first, no need to send this again.
                     
-                    if (len(packets)==ack):
+                    if (len(packets) == ack):
                         print("DATA Finished\n")
                         connection_teardown(clientSocket,ip,port)
                         break
                     
-                    window_array.append(window_array[-1]+1)
+                    window_array.append(window_array[-1] + 1)
                     if (window_array[-1] <= len(packets)):
                         clientSocket.sendto(packets[window_array[-1]-1],(ip,port))
                         print(f"{utils.timestamp()} -- packet with seq = {window_array[-1]} is sent, sliding window = {sliding_window(window_array)}")

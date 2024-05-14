@@ -4,12 +4,13 @@ from header import *
 import sys
 import datetime
 
-'''Function used to make the print to terminal shorter. Returns timestand (hour, min, sek, ms)'''
+'''Function that returns timestamp (hour, min, sek, ms)'''
 def timestamp():
     return datetime.datetime.now().time()
 
 
-'''Function for checking if the IP address is ok, returns boolean'''
+'''Function for checking if the IP address is ok. 
+Takes ip address as argument and returns boolean'''
 def ip_ok(ip):
     try:
         ipaddress.ip_address(ip)
@@ -17,14 +18,15 @@ def ip_ok(ip):
     except ValueError:
         return False
 
-'''Function for checking if the port is in range, returns boolean'''
+'''Function for checking if the port is in range. 
+Takes port no as argument and returns boolean'''
 def port_ok(port):
     return port in range(1024,65536)
 
 
 '''Function for printing the throughput based on how much data
 was received and how much time elapsed during the connection.
-Takes start_time and end_time as arguments and prints the result.'''
+Takes start_time and end_time as arguments and prints the throughput.'''
 def print_throughput(start_time, end_time):
     try:
         if (end_time == None):
@@ -33,7 +35,6 @@ def print_throughput(start_time, end_time):
             print("Start time not captured. Not possible to calculate Mbps.")
         else:
             total_time = end_time - start_time
-        print(f"Total time elapsed: {total_time}")
         
         #Returns size in bytes and will therefore multiply with 8
         file_size = os.path.getsize("result.jpg")*8
@@ -43,10 +44,10 @@ def print_throughput(start_time, end_time):
         
         #As stated in the assignment: For the sake of simplicity, 
         # assume 1 KB = 1000 Bytes, and 1 MB = 1000 KB. 
-        if (file_size_ps>1000000):
+        if (file_size_ps > 1000000):
             file_size_ps = file_size_ps/1000000
             unit = "Mbps"
-        elif (file_size_ps>1000):
+        elif (file_size_ps > 1000):
             file_size_ps = file_size_ps/1000
             unit = "Kbps"
         else:
@@ -68,17 +69,10 @@ def receive_packet(udpsocket):
     return address, header, data, seq, ack, flags
 
 
-'''
-''' # geir part of header module?
-def create_header_from_packet(packet):
-    header = packet[:calcsize(HEADER_FORMAT)]
-    seq, ack, flags = unpack(HEADER_FORMAT, header)
-    return Header(seq, ack, flags)
-
 
 '''Accepts a packet and returns a tuple with the header and data'''
 def unpack_packet(packet):
-    header = create_header_from_packet(packet)
+    header = Header.create_header_from_packet(packet)
     data = packet[calcsize(HEADER_FORMAT):]
     return header, data
 

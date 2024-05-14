@@ -43,14 +43,14 @@ def successful_handshake(serverSocket):
 '''Function completing the connection teardown, after initiated by client.
 Parameters: server socket and client address. Returns nothing.'''
 def connection_teardown(serverSocket, clientAddress):
-    #Create ACK packet.
-    header = Header(flags=ACKFLAG)
+    #Create FIN-ACK packet.
+    header = Header(flags=FINACKFLAG)
     data = b''
     packet = utils.create_packet(header.get_header(),data)
     
-    #Sending ACK packet to confirm connection teardown
+    #Sending FIN-ACK packet to confirm connection teardown
     serverSocket.sendto(packet,clientAddress)
-    print("ACK packet is sent\n")
+    print("FIN ACK packet is sent\n")
 
 
 '''Function for initiating server, connecting to a client, 

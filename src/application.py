@@ -6,20 +6,6 @@ import server
 import utils
 from header import *
 
-#Definition of unit tests:
-'''
-    #Some unit tests
-    """
-    >>> jfi([10,10,10])
-    1.0
-    >>> jfi(['bla',10,10])
-    bla is not an integer and will not be added
-    1.0
-    >>> jfi([5,10])
-    0.9
-    """
-'''
-
 #Used the code from args.py in oblig 1, with modifications:
 parser = argparse.ArgumentParser(description='simple args')
 
@@ -39,8 +25,6 @@ parser.add_argument('-d', '--discard', type=int, default=-1,
                     help="Use this in the server mode to discard a specific packet. Used in testing.")
 
 args = parser.parse_args()
-
-#Add a test for window?? Cannot be less than 1, and shouldn't be bigger than no of packets in data from file.
 
 if not utils.port_ok(args.port):
     print("Invalid port. It must be within the range [1024,65535]")
@@ -69,8 +53,3 @@ elif args.client:
 else:
     print("You should run either in server or client mode.")
     sys.exit(1)
-
-if __name__ == "__main__":
-    import doctest
-    #doctest.testmod()
-    #main()
