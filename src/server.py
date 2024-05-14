@@ -91,18 +91,23 @@ def serverFunction(ip, port, discard):
                 
                 if seq == discard:
                     discard = -1
+                    out_of_order = True
+                    
                 elif seq == last_seq_acked+1:
                     print(f"{utils.timestamp()} -- packet {seq} is received")
                     file.write(data)
                     last_seq_acked = seq
+                    
                 else: 
                     out_of_order = True
                     print(f"{utils.timestamp()} -- out-of-order packet {seq} is received")
                     
             except TimeoutError as e:
-                print(f"Exception: {e}")
+                #TODO: This is never in the print.
+                print(f"{utils.timestamp()} -- Exception: {e}")
             
             #Create and send ACK packet.
+            #TODO: Check if I need these try, except here. 
             try:
                 if not out_of_order:
                     header = Header(ack=last_seq_acked,flags=ACKFLAG)
@@ -110,5 +115,6 @@ def serverFunction(ip, port, discard):
                     packet = utils.create_packet(header.get_header(),data)
                     serverSocket.sendto(packet,clientAddress)
                     print(f"{utils.timestamp()} -- sending ack for the received {last_seq_acked}")
+
             except TimeoutError as e:
                 print(f"Tried to send ACK for packet {last_seq_acked}, but failed: {e}")

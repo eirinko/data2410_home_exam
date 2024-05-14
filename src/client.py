@@ -53,15 +53,22 @@ def connection_teardown(clientSocket, ip, port):
     
     #Checking if the socket receives an ACK-packet
     # and that it doesn't refer to a seq-no.
-    try:
-        clientSocket.settimeout(0.5)
-        _, _, _, seq, _, flags = utils.receive_packet(clientSocket)
-        if flags == FINACKFLAG and seq == 0:
-            print("FIN ACK packet is received")
-            clientSocket.close()
-            print("Connection Closes")
-    except TimeoutError as e:
-        print(f"Didn't receive a FIN ACK for the FIN. Exception: {e}")
+    while True:
+        try:
+            clientSocket.settimeout(0.5)
+            _, _, _, seq, _, flags = utils.receive_packet(clientSocket)
+            if flags == FINACKFLAG and seq == 0:
+                print("FIN ACK packet is received")
+                clientSocket.close()
+                print("Connection Closes")
+                break
+        except TimeoutError as e:
+            print(f"Didn't receive a FIN ACK for the FIN. Exception: {e}. Resending the FIN.")
+            data = b''
+            finheader = Header(flags = FINFLAG)
+            packet = utils.create_packet(finheader.get_header(),data)
+            clientSocket.sendto(packet,(ip,port))
+            print("FIN packet is sent")
 
 
 '''Function takes file path as argument and creates packets of data size 994 bytes.
@@ -124,7 +131,9 @@ def clientFunction(ip, port, file, window):
                 _, _, _, seq, ack, _ = utils.receive_packet(clientSocket)
                 if (ack == window_array[0]):
                     print(f"{utils.timestamp()} -- ACK for packet = {ack} is received")
-                    window_array.pop(0) #Remove the first, no need to send this again.
+                    
+                    #Remove the first in the window, no need to send this again.
+                    window_array.pop(0)
                     
                     if (len(packets) == ack):
                         print("DATA Finished\n")
@@ -135,15 +144,12 @@ def clientFunction(ip, port, file, window):
                     if (window_array[-1] <= len(packets)):
                         clientSocket.sendto(packets[window_array[-1]-1],(ip,port))
                         print(f"{utils.timestamp()} -- packet with seq = {window_array[-1]} is sent, sliding window = {sliding_window(window_array)}")
-                
-                else:
-                    print(f"Received the wrong ACK: {ack}. Retransmitting the whole window: {sliding_window(window_array)}.")
-                    for seq in window_array:
-                        if (seq <= len(packets)):
-                            clientSocket.sendto(packets[seq-1],(ip,port))
-                            print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window(window_array)}")
-
+                        
             except TimeoutError as e:
-                print(f"Wasn't able to receive any acks. Exception: {e}")
+                print(f"{utils.timestamp()} -- RTO occured.")
+                for seq in window_array:
+                    if (seq <= len(packets)):
+                        clientSocket.sendto(packets[seq-1],(ip,port))
+                        print(f"{utils.timestamp()} -- retransmitting packet with seq = {seq}")
     else:
         print("The handshake was unsuccessful.")

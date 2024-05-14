@@ -44,18 +44,15 @@ def print_throughput(start_time, end_time):
         
         #As stated in the assignment: For the sake of simplicity, 
         # assume 1 KB = 1000 Bytes, and 1 MB = 1000 KB. 
-        if (file_size_ps > 1000000):
-            file_size_ps = file_size_ps/1000000
-            unit = "Mbps"
-        elif (file_size_ps > 1000):
-            file_size_ps = file_size_ps/1000
-            unit = "Kbps"
-        else:
-            unit = "bps"
+        file_size_ps = file_size_ps/1000000
+        unit = "Mbps"
+        
         print(f"The throughput is {file_size_ps:.2f} {unit}")
+    
     except FileNotFoundError:
         print("File not found.")
         sys.exit(1)
+    
     except OSError:
         print("OS error occurred.")
 
