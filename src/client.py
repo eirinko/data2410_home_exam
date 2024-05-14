@@ -11,33 +11,37 @@ def successful_handshake(clientSocket, ip, port):
     synheader = Header(flags=SYNFLAG)
     data = b''
     packet = utils.create_packet(synheader.get_header(),data)
-    clientSocket.sendto(packet, (ip, port))
-    print("SYN packet is sent")
     
-    try:
-        clientSocket.settimeout(0.5)
-        _, _, data, _, _, flags = utils.receive_packet(clientSocket)
+    while True:
+        clientSocket.sendto(packet, (ip, port))
+        print("SYN packet is sent")
         
-        #Checking if it receives a SYN-ACK packet.
-        if (flags == SYNACKFLAG):
-            print("SYN-ACK packet is received")
+        try:
+            clientSocket.settimeout(0.5)
+            _, _, data, _, _, flags = utils.receive_packet(clientSocket)
             
-            #If SYN-ACK is received, send an ACK.
-            ackheader = Header(flags=ACKFLAG)
-            data = b''
-            packet = utils.create_packet(ackheader.get_header(),data)
-            clientSocket.sendto(packet, (ip, port))
-            print("ACK packet is sent")
+            #Checking if it receives a SYN-ACK packet.
+            if (flags == SYNACKFLAG):
+                print("SYN-ACK packet is received")
+                
+                #If SYN-ACK is received, send an ACK.
+                ackheader = Header(flags=ACKFLAG)
+                data = b''
+                packet = utils.create_packet(ackheader.get_header(),data)
+                clientSocket.sendto(packet, (ip, port))
+                print("ACK packet is sent")
+                
+                #The connection is successful from the client side.
+                print("Connection established\n")
+                return True
+            else:
+                print("No SYN-ACK packet received.")
+                continue
             
-            #The connection is successful from the client side.
-            print("Connection established\n")
-            return True
-        else:
-            print("No SYN-ACK packet received.")
-            return False
-    except TimeoutError as e:
-        print(f"Timeout exception: {e}.")
-        clientSocket.close()
+        except TimeoutError as e:
+            print(f"Timeout exception: {e}.")
+            continue
+            #clientSocket.close()
 
 
 '''Function used to stop the connection and close the socket.
@@ -51,12 +55,13 @@ def connection_teardown(clientSocket, ip, port):
     clientSocket.sendto(packet,(ip,port))
     print("FIN packet is sent")
     
-    #Checking if the socket receives an ACK-packet
-    # and that it doesn't refer to a seq-no.
     while True:
         try:
             clientSocket.settimeout(0.5)
             _, _, _, seq, _, flags = utils.receive_packet(clientSocket)
+            
+            #Checking if the socket receives an ACK-packet
+            # and that it doesn't refer to a seq-no.
             if flags == FINACKFLAG and seq == 0:
                 print("FIN ACK packet is received")
                 clientSocket.close()
@@ -128,7 +133,13 @@ def clientFunction(ip, port, file, window):
         while True:
             try:
                 clientSocket.settimeout(0.5)
-                _, _, _, seq, ack, _ = utils.receive_packet(clientSocket)
+                _, _, _, seq, ack, flags = utils.receive_packet(clientSocket)
+                if (flags == FINFLAG):
+                    print("Server received no ACK for handshake. Socket closes.")
+                    clientSocket.settimeout(None)
+                    clientSocket.close()
+                    break
+                    
                 if (ack == window_array[0]):
                     print(f"{utils.timestamp()} -- ACK for packet = {ack} is received")
                     
@@ -152,4 +163,4 @@ def clientFunction(ip, port, file, window):
                         clientSocket.sendto(packets[seq-1],(ip,port))
                         print(f"{utils.timestamp()} -- retransmitting packet with seq = {seq}")
     else:
-        print("The handshake was unsuccessful.")
+        print("Connection failed.")

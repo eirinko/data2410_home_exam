@@ -33,7 +33,11 @@ def successful_handshake(serverSocket):
             print("Connection established")
             return True
         else:
-            print("No ACK received.")
+            print("No ACK received. Connection close.")
+            header = Header(flags=FINFLAG)
+            data = b''
+            packet = utils.create_packet(header.get_header(), data)
+            serverSocket.sendto(packet,clientAddress)
             return False
     else:
         print("No SYN received.")
@@ -103,11 +107,9 @@ def serverFunction(ip, port, discard):
                     print(f"{utils.timestamp()} -- out-of-order packet {seq} is received")
                     
             except TimeoutError as e:
-                #TODO: This is never in the print.
                 print(f"{utils.timestamp()} -- Exception: {e}")
             
             #Create and send ACK packet.
-            #TODO: Check if I need these try, except here. 
             try:
                 if not out_of_order:
                     header = Header(ack=last_seq_acked,flags=ACKFLAG)
