@@ -80,11 +80,12 @@ def prepare_packets(file):
 
 
 '''Function for creating a string for visualizing the sliding window.'''
-def sliding_window_print(lowest_seq, windowsize):
-    output = "{" + str(lowest_seq)
-    for i in range(windowsize-1):
-        output += ", " + str(lowest_seq+1)
-        lowest_seq+=1
+def sliding_window(window_array):
+    output = "{"
+    for number in window_array:
+        output += str(number)
+        if window_array.index(number) < len(window_array) - 1:
+            output += ", "
     output += "}"
     return output
 
@@ -101,43 +102,41 @@ def clientFunction(ip, port, file, window):
         #Creating a list of all the packets that will be sent
         packets = prepare_packets(file)
         
-        lowest_seq = 1
-        highest_seq = window
+        window_array = []
         
         #Sending the packets of the first window. 
         print("Data Transfer:\n")
-        for i in range(lowest_seq-1,highest_seq): #To reflect index of packets
+        for i in range(0, window): #To reflect index of packets
             seq = i+1
+            window_array.append(seq)
             clientSocket.sendto(packets[i],(ip,port))
-            print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window_print(lowest_seq,lowest_seq+i)}")
+            print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window(window_array)}")
         
         while True:
             #TODO: What if the cumulative window size of file is smaller than window size?
             try:
                 clientSocket.settimeout(0.5)
                 _, _, _, seq, ack, _ = utils.receive_packet(clientSocket)
-                if (ack==lowest_seq):
+                if (ack==window_array[0]):
                     print(f"{utils.timestamp()} -- ACK for packet = {ack} is received")
-                    lowest_seq+=1
+                    window_array.pop(0) #Remove the first, no need to send this again.
                     
                     if (len(packets)==ack):
                         print("DATA Finished\n")
                         connection_teardown(clientSocket,ip,port)
                         break
                     
-                    if (highest_seq <= len(packets)):
-                        clientSocket.sendto(packets[highest_seq-1],(ip,port))
-                        
-                        print(f"{utils.timestamp()} -- packet with seq = {highest_seq} is sent, sliding window = {sliding_window_print(lowest_seq, window)}")
-                        highest_seq+=1
-                    
+                    window_array.append(window_array[-1]+1)
+                    if (window_array[-1] <= len(packets)):
+                        clientSocket.sendto(packets[window_array[-1]-1],(ip,port))
+                        print(f"{utils.timestamp()} -- packet with seq = {window_array[-1]} is sent, sliding window = {sliding_window(window_array)}")
+                
                 else:
-                    print(f"Received the wrong ACK: {ack}. Retransmitting the whole window: {sliding_window_print(lowest_seq,window)}.")
-                    for i in range(lowest_seq-1,highest_seq):
-                        seq = i+1
+                    print(f"Received the wrong ACK: {ack}. Retransmitting the whole window: {sliding_window(window_array)}.")
+                    for seq in window_array:
                         if (seq <= len(packets)):
-                            clientSocket.sendto(packets[i],(ip,port))
-                            print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window_print(lowest_seq,window)}")
+                            clientSocket.sendto(packets[seq-1],(ip,port))
+                            print(f"{utils.timestamp()} -- packet with seq = {seq} is sent, sliding window = {sliding_window(window_array)}")
 
             except TimeoutError as e:
                 print(f"Wasn't able to receive any acks. Exception: {e}")
