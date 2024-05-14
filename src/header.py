@@ -36,7 +36,7 @@ class Header:
 
     '''Takes a header of as an argument,
     unpacks the value based on the specified header_format
-    and returns a tuple with the values'''
+    and returns a tuple with the values seq, ack, flags'''
     def parse_header(self):
         return unpack(HEADER_FORMAT, self.header)
     
