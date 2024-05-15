@@ -41,7 +41,6 @@ def successful_handshake(clientSocket, ip, port):
         except TimeoutError as e:
             print(f"Timeout exception: {e}.")
             continue
-            #clientSocket.close()
 
 
 '''Function used to stop the connection and close the socket.
