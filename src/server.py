@@ -55,6 +55,7 @@ def connection_teardown(serverSocket, clientAddress):
     #Sending FIN-ACK packet to confirm connection teardown
     serverSocket.sendto(packet,clientAddress)
     print("FIN ACK packet is sent\n")
+    serverSocket.close()
 
 
 '''Function for initiating server, connecting to a client, 
@@ -88,9 +89,7 @@ def serverFunction(ip, port, discard):
                     #Stopping the timer.
                     end_time = time.time()
                     utils.print_throughput(g_start_time, end_time)
-                    
                     print("Connection closes")
-                    serverSocket.close()
                     break
                 
                 if seq == discard:
