@@ -21,9 +21,16 @@ The solution uses argparse, and there are some optional arguments available for 
 Be sure to always use the same IP address and port for both client and server. The default values are 127.0.0.1 and 8088 for IP address and port, respectively. 
 
 #### Server options
-IP
-Port
+IP: Default value set to 127.0.0.1, but can be set to something else with the format 10.1.2.3 with the following code:
+
+`python3 application.py -s -i <your_chosen_IP_address>`
+
+Port: Default value set to 8088, but can be set to something else within range [1024,65535] with the following code:
+
+`python3 application.py -s -p <your_chosen_port_no>`
+
 Discard
+
 
 #### Client options
 File: must be included, or else the client doesn't know which file to send. 
@@ -31,12 +38,12 @@ File: must be included, or else the client doesn't know which file to send.
 
 IP: Default value set to 127.0.0.1, but can be set to something else with the format 10.1.2.3 with the following code:
 
-`-i <your_chosen_IP_address>`
+`python3 application.py -c -f <file_name> -i <your_chosen_IP_address>`
 
 Port: Default value set to 8088, but can be set to something else within range [1024,65535] with the following code:
 
-`-p <your_chosen_port_no>`
+`python3 application.py -c -f <file_name> -p <your_chosen_port_no>`
 
-Window: 
+Window: Default window is set to 3, 
 
-
+`python3 application.py -c -f <file_name> -w <wanted_window_size>`
