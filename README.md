@@ -30,9 +30,11 @@ File: must be included, or else the client doesn't know which file to send.
 
 
 IP: Default value set to 127.0.0.1, but can be set to something else with the format 10.1.2.3 with the following code:
+
 `-i <your_chosen_IP_address>`
 
 Port: Default value set to 8088, but can be set to something else within range [1024,65535] with the following code:
+
 `-p <your_chosen_port_no>`
 
 Window: 
