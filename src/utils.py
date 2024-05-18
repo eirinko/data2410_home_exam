@@ -37,7 +37,7 @@ def print_throughput(start_time, end_time):
             total_time = end_time - start_time
         
         #Returns size in bytes and will therefore multiply with 8
-        file_size = os.path.getsize("result.jpg")*8
+        file_size = os.path.getsize("test_files/result.jpg")*8
         
         #Calculating bits per second
         file_size_ps = file_size/total_time

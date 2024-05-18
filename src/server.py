@@ -71,7 +71,7 @@ def serverFunction(ip, port, discard):
     serverSocket.bind((ip, port))
     
     #Creating a file where data from the received packets can be appended.
-    file = open("result.jpg","wb")
+    file = open("test_files/result.jpg","wb")
     
     if successful_handshake(serverSocket):
         last_seq_acked = 0
